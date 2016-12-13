@@ -86,6 +86,7 @@ class Database:
             print('Recreating tables..')
             column_defs = ['%s %s' % (key, self.columns[key])
                            for key in self.columns]
+            column_defs.insert(0, 'id INTEGER PRIMARY KEY AUTOINCREMENT')
             query = "CREATE TABLE files (%s)" % ", ".join(column_defs)
             self.sql(query)
             print('DONE!')
