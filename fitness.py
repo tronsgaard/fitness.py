@@ -119,7 +119,11 @@ class Database:
         self.connection.commit()
 
     def query(self, **kwargs):
-        # Assemble SQL query
+        # If no kwargs provided, just return everything
+        if len(kwargs) == 0:
+            return self.sql("SELECT * FROM files")
+
+        # Otherwise, assemble SQL query
         clauses = []
         values = []
         for key, val in kwargs.items():
@@ -133,6 +137,7 @@ class Database:
                 clauses.append("{} = ?".format(key))
                 values.append(val)
         query = "SELECT * FROM files WHERE {}".format(" AND ".join(clauses))
+
         # Run query and return cursor
         return self.sql(query, values)
 
