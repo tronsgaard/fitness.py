@@ -45,7 +45,9 @@ def _row_to_dict(cursor, row):
 class Database:
     def __init__(self, readonly=True):
         """Set readonly=False in order to make changes"""
-        self.dbfile = conf['dbfile']
+        dbfolder = os.path.dirname(os.path.abspath(__file__))
+        dbfile = os.path.join(dbfolder, conf['dbfile'])
+        self.dbfile = os.path.abspath(dbfile)
         if readonly and os.path.isfile(self.dbfile):
             # Py2 workaround to open in readonly mode
             self._fd = os.open(self.dbfile, os.O_RDONLY)
