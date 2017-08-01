@@ -21,7 +21,8 @@ conf = {
     # The sqlite storage file
     'dbfile': 'database.db',
     # The directory where the data is stored
-    'basedir': '/home/rtr/',
+    #'basedir': '/SONG/sstenerife/extr_spec/',
+    'basedir': '/SONG/sstenerife/star_spec/',
     # The header keywords to index in the database.
     # The inner dict holds SQL datatype (for table creation) and a column name
     'header_keywords': {
@@ -118,16 +119,18 @@ class Database:
         self.sql(query, [r[k] for k in keys])
         self.connection.commit()
 
-    def query(self, **kwargs):
-        # If no kwargs provided, just return everything
-        if len(kwargs) == 0:
-            return self.sql("SELECT * FROM files")
+    
+    def __where(self, **kwargs):
+        """Compose the list of WHERE clauses and values"""
 
-        # Otherwise, assemble SQL query
         clauses = []
         values = []
         for key, val in kwargs.items():
-            if key not in self.columns:
+            key_elems = key.split('__')
+            if key == 'path':
+                clauses.append("path LIKE ?")
+                values.append(val)
+            elif key not in self.columns:
                 print("Illegal keyword argument: '{}'".format(key))
                 print("The following keywords are allowed: {}".format(
                     ", ".join(self.columns)
@@ -136,8 +139,19 @@ class Database:
             else:
                 clauses.append("{} = ?".format(key))
                 values.append(val)
-        query = "SELECT * FROM files WHERE {}".format(" AND ".join(clauses))
+        return clauses, values
 
+    def query(self, **kwargs):
+        """Generate SQL SELECT from keyword arguments and query the database"""
+
+        # If no kwargs provided, just return everything
+        if len(kwargs) == 0:
+            return self.sql("SELECT * FROM files")
+
+        # Otherwise, build the query
+        clauses, values = self.__where(**kwargs)
+        query = "SELECT * FROM files WHERE {}".format(" AND ".join(clauses))
+        
         # Run query and return cursor
         return self.sql(query, values)
 
@@ -145,6 +159,28 @@ class Database:
         """Wrap self.query() and return a list of files"""
         result = self.query(**kwargs)
         return [row['path'] for row in result]
+
+    def sql_files(self, *args, **kwargs):
+        """Wrap self.sql() and return a list of files"""
+        result = self.sql(*args, **kwargs)
+        return [row['path'] for row in result]
+
+    def count(self, **kwargs):
+        """Similar to query method, but counts the number of records instead"""
+        
+        if len(kwargs) == 0:
+            # If no kwargs provided, just return everything
+            result = self.sql("SELECT COUNT() FROM files")
+        else:
+            # Otherwise, build the query
+            clauses, values = self.__where(**kwargs)
+            query = "SELECT COUNT() FROM files WHERE {}".format(" AND ".join(clauses))
+            result = self.sql(query, values)
+
+        # Run query and return cursor
+        row = result.fetchone()
+        return row['COUNT()']
+
 
     def flush(self):
         """Empty all tables"""
